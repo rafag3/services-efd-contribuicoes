@@ -1,0 +1,237 @@
+================================================================================
+RESUMO DO PROJETO — EFD Contribuições · Automação de Serviços
+Sompo Services Gestão de Riscos e Vistoria Ltda
+CNPJ: 46.206.637/0001-30
+================================================================================
+Última atualização: maio/2026
+GitHub: https://github.com/rafag3/services-efd-contribuicoes
+
+────────────────────────────────────────────────────────────────────────────────
+1. OBJETIVO
+────────────────────────────────────────────────────────────────────────────────
+Automatizar a geração do arquivo TXT de importação da EFD Contribuições
+(layout SPED versão 006) a partir da planilha de notas fiscais de serviços
+emitidas pela Sompo Services. O usuário seleciona a planilha .xlsx e o
+período de apuração na interface, e o sistema gera o TXT pronto para
+importar no PVA da Receita Federal.
+
+────────────────────────────────────────────────────────────────────────────────
+2. TECNOLOGIA
+────────────────────────────────────────────────────────────────────────────────
+- Python 3.12+
+- Interface: Tkinter nativo (sem browser, sem Flask)
+- Dependências: pandas, openpyxl, pillow
+- Distribuição: PyInstaller → EFD_Services.exe (onefile, windowed)
+- Repositório: GitHub (privado recomendado — dados fiscais)
+- Hospedagem: nenhuma (100% local, ambiente corporativo sem internet)
+
+────────────────────────────────────────────────────────────────────────────────
+3. ESTRUTURA DE PASTAS
+────────────────────────────────────────────────────────────────────────────────
+efd_services/
+├── main.py                         ← Interface Tkinter + orquestrador
+├── requirements.txt                ← pandas, openpyxl, pillow
+├── build.bat                       ← Gera o .exe com PyInstaller
+├── assets/
+│   └── logo.png                    ← Logo Sompo (colocar manualmente)
+├── config/
+│   └── constantes.py               ← Dados fixos da empresa + provisórios
+├── readers/
+│   └── excel_notas_reader.py       ← Lê planilha de notas (.xlsx)
+├── domain/
+│   ├── models.py                   ← Dataclasses NotaFiscal, RegistroF600
+│   └── formatadores.py             ← fmt_valor, fmt_cnpj, fmt_data, montar_linha
+├── builders/
+│   ├── bloco0_builder.py           ← Registros 0000→0990
+│   ├── blocoA_builder.py           ← A001, A010, A100, A170, A990
+│   ├── blocoF_builder.py           ← F001, F010, F100, F600, F990
+│   ├── blocoM_builder.py           ← M001, M200, M210, M600, M610, M990
+│   ├── bloco1_builder.py           ← 1001, 1300, 1700, 1990
+│   └── bloco9_builder.py           ← 9001, 9900, 9990, 9999 (automático)
+└── writers/
+    └── efd_writer.py               ← Monta e serializa o TXT final (latin-1)
+
+────────────────────────────────────────────────────────────────────────────────
+4. FLUXO DA AUTOMAÇÃO
+────────────────────────────────────────────────────────────────────────────────
+1. Usuário seleciona planilha .xlsx e período (mês/ano) na interface
+2. excel_notas_reader.py lê com header=2 (linha 3 é o cabeçalho real)
+3. Builders montam cada bloco em ordem
+4. efd_writer.py concatena tudo e serializa em latin-1 com \r\n
+5. Diálogo de salvar → usuário escolhe destino
+6. TXT gerado é importado no PVA da EFD Contribuições
+
+────────────────────────────────────────────────────────────────────────────────
+5. ENTRADAS (dados de entrada)
+────────────────────────────────────────────────────────────────────────────────
+A) Planilha Excel de notas fiscais emitidas (xlsx)
+   - Linha 1: nome da empresa (ignorada)
+   - Linha 2: em branco (ignorada)
+   - Linha 3: cabeçalho → header=2 no pandas
+   - Colunas principais:
+       "COMP EMISSÃO", "DATA EMISSÃO", "Prefeitura", "Nº  NF",
+       "Numero SAP  ", "Valor N. Fiscal", "ISS - 5%", "IRRF - 1,5%",
+       "CSLL - 1%", "COFINS- 3%", "PIS- 0,65%", "TOTAL CSRF",
+       "Valor", "DOC REC BANCO", "Dt. Dep.", "COMP RECEBIMENTO",
+       "Cód", "BP", "Razão", "CNPJ", "REGIME"
+   - REGIME: identifica Simples Nacional ("Optante pelo Simples Nacional")
+     → Optante NÃO gera F600
+
+B) Período de apuração
+   - Selecionado pelo usuário na interface (mês + ano)
+   - Usado no registro 0000 (DT_INI / DT_FIN)
+   - ATENÇÃO: não é derivado da planilha — usuário deve selecionar o mês correto
+
+────────────────────────────────────────────────────────────────────────────────
+6. REGISTROS GERADOS E SEUS LAYOUTS (campos sem REG)
+────────────────────────────────────────────────────────────────────────────────
+0000 → 14 campos  | abertura do arquivo
+0001 → 1 campo    | abertura bloco 0
+0100 → 13 campos  | dados do contato/responsável
+0110 → 4 campos   | indicadores de incidência
+0111 → 5 campos   | receitas brutas (zeros)
+0140 → 8 campos   | estabelecimento
+0150 → 12 campos  | participantes (1 por CNPJ da planilha)
+0190 → 2 campos   | unidade de medida
+0200 → 11 campos  | itens/serviços  ← SEM campo CEST (não existe na EFD Contribuições)
+0500 → 8 campos   | plano de contas
+0990 → 1 campo    | encerramento bloco 0
+
+A001 → 1 campo    | abertura bloco A
+A010 → 1 campo    | estabelecimento
+A100 → 21 campos  | nota fiscal de serviço (CHV_NFSE = "A")
+A170 → 18 campos  | item da nota (NAT_BC_CRED e IND_ORIG_CRED antes do CST_PIS)
+A990 → 1 campo    | encerramento bloco A
+
+C001/C990, D001/D990, I001/I990, P001/P990 → blocos sem movimento (IND=1)
+
+F001 → 1 campo    | abertura bloco F
+F010 → 1 campo    | estabelecimento
+F100 → 19 campos  | receitas financeiras (FIXO — ver seção 7)
+                    ← SEM campo DESC_DOC_OPE (não existe na EFD Contribuições)
+F600 → 11 campos  | retenção PIS/COFINS por tomador
+                    (agrupado por CNPJ+data, só NÃO-Simples)
+F990 → 1 campo    | encerramento bloco F
+
+M001 → 1 campo    | abertura bloco M
+M200 → 13 campos  | apuração PIS (calculado de A+F)
+M210 → 16 campos  | detalhe por CST (01=serviços 1,65% | 02=financeiras 0,65%)
+M600 → 13 campos  | apuração COFINS (calculado de A+F)
+M610 → 16 campos  | detalhe por CST (01=serviços 7,6% | 02=financeiras 4%)
+M990 → 1 campo    | encerramento bloco M
+
+1001 → 1 campo    | abertura bloco 1
+1300 → 8 campos   | controle retenções PIS acumulado
+1700 → 8 campos   | controle retenções COFINS acumulado
+1990 → 1 campo    | encerramento bloco 1
+
+9001 → 1 campo    | abertura bloco 9
+9900 → 3 campos   | contador por tipo de registro (automático)
+9990 → 1 campo    | total linhas bloco 9
+9999 → 1 campo    | total linhas arquivo
+
+────────────────────────────────────────────────────────────────────────────────
+7. DADOS PROVISÓRIOS (aguardando retorno das áreas responsáveis)
+────────────────────────────────────────────────────────────────────────────────
+Todos em config/constantes.py. Atualizar quando a área retornar.
+
+A) F100 — Receitas financeiras (valores fixos de 03/2026)
+   São 3 linhas fixas com valores de receitas financeiras do período.
+   Precisam ser atualizadas a cada mês com os valores reais do SAP.
+   Contas envolvidas:
+     361140001 — FDO NÉX VC (DPV) GAIN        → R$ 7.276,93 (mar/26)
+     36910001  — JUROS S/CRÉD.TRIBUT           → R$ 8.607,69 (mar/26)
+     36990099  — OUTRAS RECEITAS FINANCEIRAS   → R$   528,68 (mar/26)
+   Alíquotas: PIS 0,65% / COFINS 4,00% (CST 02)
+   Pendência: definir processo para obter esses valores mensalmente do SAP
+
+B) 1300/1700 — Saldo acumulado de retenções
+   Bônus retidos acumulados de períodos anteriores (tipo doc DZ e DA no SAP).
+   Valores atuais (referência mar/26):
+     PIS    (1300): R$ 14.229,56 — PER_APU: 022026
+     COFINS (1700): R$ 70.453,17 — PER_APU: 022026
+   VL_RET_EFE: calculado automaticamente (soma das retenções do período atual)
+   VL_RET_A_EFET: calculado automaticamente (APU - EFE)
+   Pendência: definir como atualizar o saldo acumulado mensalmente
+   Cálculo: PIS 0,65% / COFINS 3,00% sobre notas de prestação de serviço
+
+────────────────────────────────────────────────────────────────────────────────
+8. REGRAS FISCAIS IMPLEMENTADAS
+────────────────────────────────────────────────────────────────────────────────
+- Alíquotas de serviços: PIS 1,65% / COFINS 7,6% (CST 01 — não cumulativo)
+- Alíquotas financeiras: PIS 0,65% / COFINS 4,00% (CST 02)
+- Retenção: somente para empresas NÃO optantes pelo Simples Nacional
+- F600 agrupado por CNPJ + data de emissão
+- M200/M600: todo PIS/COFINS apurado coberto por retenções acumuladas (valor a recolher = 0)
+- Encoding do TXT: latin-1 com terminador \r\n (padrão SPED)
+- CHV_NFSE: sempre "A" (sem NFS-e eletrônica)
+
+────────────────────────────────────────────────────────────────────────────────
+9. HISTÓRICO DE ERROS CORRIGIDOS (lições aprendidas)
+────────────────────────────────────────────────────────────────────────────────
+v1 → v2: 0200 tinha campo CEST (não existe na EFD Contribuições) → removido
+          A170 tinha CST_PIS duplicado e ordem errada → corrigido para 18 campos
+          F100 com valores de jan/26 → atualizado para mar/26
+
+v2 → v3: M210/M610 com 15 campos → adicionado campo extra para 16 campos
+          1300/1700 desatualizados → valores corrigidos com resalvas da área
+
+v3 → v4: F100 com 20 campos (DESC_DOC_OPE extra) → removido → 19 campos corretos
+          Esta foi a causa dos 3 últimos erros no PVA
+
+────────────────────────────────────────────────────────────────────────────────
+10. PENDÊNCIAS / PRÓXIMOS PASSOS
+────────────────────────────────────────────────────────────────────────────────
+[ ] Validação de período: avisar o usuário se o mês selecionado na interface
+    não bater com as datas das notas na planilha (meses diferentes)
+
+[ ] F100 dinâmico: receber valores de receitas financeiras via planilha ou
+    campo na interface, ao invés de hardcoded em constantes.py
+
+[ ] 1300/1700 dinâmico: receber saldo acumulado via campo na interface ou
+    planilha SAP (tipo doc DZ + DA, somente notas de prestação de serviço)
+
+[ ] Gerar .exe via build.bat e distribuir para o usuário final
+    (requer Python + PyInstaller instalados na máquina de build)
+
+[ ] Segunda filial (CNPJ ...000210, Santos): o TXT de referência tinha
+    2 estabelecimentos no 0140. Verificar se há notas emitidas por esse CNPJ
+    e se precisam ser tratadas separadamente
+
+[ ] Comitar versão final no GitHub após correções
+    Obs: remover __pycache__ e TXTs com dados fiscais do repositório
+
+────────────────────────────────────────────────────────────────────────────────
+11. COMO EXECUTAR
+────────────────────────────────────────────────────────────────────────────────
+Desenvolvimento:
+  cd efd_services
+  pip install -r requirements.txt
+  python main.py
+
+Gerar executável:
+  cd efd_services
+  build.bat
+  → dist/EFD_Services.exe
+
+Logo da empresa:
+  Criar pasta assets/ dentro de efd_services/
+  Colocar logo.png (100px de largura recomendado)
+  Se não encontrar o arquivo, exibe "SOMPO" em texto
+
+────────────────────────────────────────────────────────────────────────────────
+12. CONTEXTO DA EMPRESA
+────────────────────────────────────────────────────────────────────────────────
+Empresa       : Sompo Services Gestão de Riscos e Vistoria Ltda
+CNPJ          : 46.206.637/0001-30
+Município     : São Paulo — SP (cód. IBGE 3550308)
+Inscrição Mun.: 2.116.583-1
+Contato fiscal: Marcelo Batista da Silva (CRC RJ093224/O-1)
+E-mail fiscal : fiscal@maritima.com.br
+Regime        : Lucro Real — não cumulativo PIS/COFINS
+Atividade     : Prestação de serviços de gestão de riscos e vistoria
+                (código de serviço 6621501)
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================
