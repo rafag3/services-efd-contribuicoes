@@ -19,8 +19,8 @@ from readers.excel_notas_reader import ler_notas
 from writers.efd_writer import gerar_efd
 
 # ── Paleta Sompo ──────────────────────────────────────────────────────────────
-C_VERM       = "#8D0606"   # vermelho principal Sompo
-C_VERM_ESC   = "#9e0808"
+C_VERM       = "#CC0000"   # vermelho principal Sompo
+C_VERM_ESC   = "#a30000"
 C_VERM_LIGHT = "#fff0f0"
 C_BRANCO     = "#ffffff"
 C_FUNDO      = "#f5f5f5"
@@ -33,11 +33,11 @@ C_INPUT_BG   = "#fafafa"
 C_SUCESSO_BG = "#f0fdf4"
 C_SUCESSO_FG = "#166534"
 C_ERRO_BG    = "#fff0f0"
-C_ERRO_FG    = "#9a0202"
+C_ERRO_FG    = "#cc0000"
 C_AVISO_BG   = "#fffbeb"
 C_AVISO_FG   = "#92400e"
 C_AVISO_BRD  = "#fde68a"
-C_ACCENT_BAR = "#B40505"  # barra lateral
+C_ACCENT_BAR = "#CC0000"  # barra lateral
 
 F_TITULO  = ("Segoe UI", 17, "bold")
 F_SUBTIT  = ("Segoe UI", 10)
@@ -265,7 +265,9 @@ class App(tk.Tk):
 
     def _processar(self):
         try:
-            notas = ler_notas(self._caminho_xlsx.get())
+            mes = int(self._mes.get()[:2])
+            ano = int(self._ano.get()[:4])
+            notas = ler_notas(self._caminho_xlsx.get(), mes=mes, ano=ano)
             if not notas:
                 self._finalizar_erro("Nenhuma nota encontrada no arquivo.")
                 return

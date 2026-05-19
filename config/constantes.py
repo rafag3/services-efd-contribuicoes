@@ -80,44 +80,44 @@ F600_COD_REC     = "5952"
 F600_IND_NAT_PJ  = "0"
 F600_IND_DEC     = "0"
 
-# --- F100 — Receitas financeiras (PROVISÓRIO — aguardando área responsável) --
-# Fonte: TXT de referência 03/2026. Substituir quando a área retornar.
-# Campos: IND_OPER|IND_ORIG|COD_ITEM|DT_OPER|VL_OPER|
-#         CST_PIS|VL_BC_PIS|ALIQ_PIS|VL_PIS|
-#         CST_COFINS|VL_BC_COFINS|ALIQ_COFINS|VL_COFINS|
-#         NAT_BC_CRED|IND_ORIG_CRED|COD_CTA|COD_CENTRO|COD_PART|DESC_DOC_OPE
+# --- F100 — Receitas financeiras ------------------------------------------
+# Fonte: relatório SAP. Atualizar a cada mês com os valores reais.
+# VL_RET_EFE nos registros 1300/1700 = soma do VL_PIS / VL_COFINS daqui.
 F100_FIXAS = [
-    # Valores de 03/2026 extraídos do relatório SAP (imagem de referência)
+    # Valores de 04/2026 — FDO NÉX VC (DPV) GAIN
     {
         "IND_OPER": "1", "IND_ORIG": "", "COD_ITEM": "2018",
-        "DT_OPER": "31032026", "VL_OPER": 7276.93,
-        "CST_PIS": "02", "VL_BC_PIS": 7276.93, "ALIQ_PIS": 0.65, "VL_PIS": 47.30,
-        "CST_COFINS": "02", "VL_BC_COFINS": 7276.93, "ALIQ_COFINS": 4.0, "VL_COFINS": 291.08,
+        "DT_OPER": "30042026", "VL_OPER": 6578.34,
+        "CST_PIS": "02", "VL_BC_PIS": 6578.34, "ALIQ_PIS": 0.65, "VL_PIS": 42.76,
+        "CST_COFINS": "02", "VL_BC_COFINS": 6578.34, "ALIQ_COFINS": 4.0, "VL_COFINS": 263.13,
         "NAT_BC_CRED": "", "IND_ORIG_CRED": "", "COD_CTA": "361140001",
-        "COD_CENTRO": "", "COD_PART": "", "DESC_DOC_OPE": "",
+        "COD_CENTRO": "", "COD_PART": "",
     },
+    # Valores de 04/2026 — JUROS S/CRÉD.TRIBUT
     {
         "IND_OPER": "1", "IND_ORIG": "", "COD_ITEM": "2018",
-        "DT_OPER": "31032026", "VL_OPER": 8607.69,
-        "CST_PIS": "02", "VL_BC_PIS": 8607.69, "ALIQ_PIS": 0.65, "VL_PIS": 55.95,
-        "CST_COFINS": "02", "VL_BC_COFINS": 8607.69, "ALIQ_COFINS": 4.0, "VL_COFINS": 344.31,
+        "DT_OPER": "30042026", "VL_OPER": 4495.54,
+        "CST_PIS": "02", "VL_BC_PIS": 4495.54, "ALIQ_PIS": 0.65, "VL_PIS": 29.22,
+        "CST_COFINS": "02", "VL_BC_COFINS": 4495.54, "ALIQ_COFINS": 4.0, "VL_COFINS": 179.82,
         "NAT_BC_CRED": "", "IND_ORIG_CRED": "", "COD_CTA": "36910001",
-        "COD_CENTRO": "", "COD_PART": "", "DESC_DOC_OPE": "",
+        "COD_CENTRO": "", "COD_PART": "",
     },
+    # Valores de 04/2026 — OUTRAS RECEITAS FINANCEIRAS
     {
         "IND_OPER": "1", "IND_ORIG": "", "COD_ITEM": "2018",
-        "DT_OPER": "31032026", "VL_OPER": 528.68,
+        "DT_OPER": "30042026", "VL_OPER": 528.68,
         "CST_PIS": "02", "VL_BC_PIS": 528.68, "ALIQ_PIS": 0.65, "VL_PIS": 3.44,
         "CST_COFINS": "02", "VL_BC_COFINS": 528.68, "ALIQ_COFINS": 4.0, "VL_COFINS": 21.15,
         "NAT_BC_CRED": "", "IND_ORIG_CRED": "", "COD_CTA": "36990099",
-        "COD_CENTRO": "", "COD_PART": "", "DESC_DOC_OPE": "",
+        "COD_CENTRO": "", "COD_PART": "",
     },
 ]
 
 # --- 1300 / 1700 — Controle de retenções acumuladas -----------------------
-# Fonte: resalvas confirmadas pela área responsável (03/2026)
-# VL_RET_APU = total acumulado de bônus retidos (PIS/COFINS DZ)
-# VL_RET_EFE = calculado dinamicamente a partir das F600s do período atual
-RETENCAO_ACUMULADA_PIS    = 14229.56   # 1300 — PIS  0,65%
-RETENCAO_ACUMULADA_COFINS = 70453.17   # 1700 — COFINS 3,00%
-RETENCAO_PER_APU          = "022026"   # período de apuração anterior
+# VL_RET_APU = total acumulado de bônus retidos (tipo doc DZ + DA no SAP)
+# VL_RET_EFE = soma do VL_PIS / VL_COFINS dos registros F100 do período
+#              (calculado automaticamente pelo bloco1_builder)
+# VL_RET_A_EFET = VL_RET_APU - VL_RET_EFE (calculado automaticamente)
+RETENCAO_ACUMULADA_PIS    = 14229.56   # 1300 — PIS  0,65%  (atualizar mensalmente)
+RETENCAO_ACUMULADA_COFINS = 70453.17   # 1700 — COFINS 3,00% (atualizar mensalmente)
+RETENCAO_PER_APU          = "032026"   # período de apuração anterior → atualizar para mês-1

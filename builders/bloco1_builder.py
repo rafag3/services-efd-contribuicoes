@@ -6,6 +6,7 @@ from config.constantes import (
     RETENCAO_ACUMULADA_PIS,
     RETENCAO_ACUMULADA_COFINS,
     RETENCAO_PER_APU,
+    F100_FIXAS,
 )
 from domain.models import NotaFiscal
 from domain.formatadores import montar_linha, fmt_valor
@@ -25,15 +26,16 @@ def build_bloco1(notas: list[NotaFiscal]) -> list[str]:
     """
     1300 — PIS retido acumulado
     1700 — COFINS retido acumulado
-    VL_RET_EFE = soma das retenções efetivas do período atual (das notas com retenção)
+    VL_RET_EFE = soma do VL_PIS / VL_COFINS dos registros F100 do período
+                 (receitas financeiras — regra confirmada pela área)
     VL_RET_A_EFET = VL_RET_APU - VL_RET_EFE
     """
     linhas = []
     linhas.append("|1001|0|")
 
-    # Calcula VL_RET_EFE a partir das notas do período
-    ret_efe_pis    = round(sum(n.pis_ret    for n in notas if n.tem_retencao), 2)
-    ret_efe_cofins = round(sum(n.cofins_ret for n in notas if n.tem_retencao), 2)
+    # VL_RET_EFE vem do total de PIS/COFINS do F100 (não das notas)
+    ret_efe_pis    = round(sum(f["VL_PIS"]    for f in F100_FIXAS), 2)
+    ret_efe_cofins = round(sum(f["VL_COFINS"] for f in F100_FIXAS), 2)
 
     # 1300 — PIS
     vl_ret_apu_pis   = RETENCAO_ACUMULADA_PIS
