@@ -14,20 +14,20 @@ from domain.formatadores import fmt_cnpj, fmt_data
 def ler_notas(caminho: str, mes: int = None, ano: int = None) -> list[NotaFiscal]:
     """
     Lê a planilha de notas fiscais e filtra pelo período informado (mes/ano).
-    - Se mes e ano forem None, retorna todas as notas presentes.
-    - F600 só é gerado para notas com Dt. Dep. preenchida (não "EM ABERTO", não 0, não NaN).
+    Regras de exclusão:
+      - Notas com VL_DOC = 0 são ignoradas (sem valor, sem A100)
+      - Notas com CNPJ inválido (zero) são ignoradas
+      - Dt. Dep. 'EM ABERTO' / 0 / vazio = nota não gera F600
     """
-    # Tenta aba FATURAMENTO (planilha anual) → senão lê formato legado
     try:
         df = pd.read_excel(caminho, sheet_name='FATURAMENTO', header=3)
     except Exception:
         df = pd.read_excel(caminho, header=2)
 
-    # Remove linhas sem NF
     df = df.dropna(subset=["Nº  NF"]).copy()
     df = df.reset_index(drop=True)
 
-    # Filtra pelo mês/ano selecionado pelo usuário
+    # Filtra pelo mês/ano selecionado
     if mes is not None and ano is not None:
         comp_alvo = f"{mes:02d}/{ano}"
         df = df[df["COMP EMISSÃO"].astype(str).str.strip() == comp_alvo].copy()
@@ -35,12 +35,34 @@ def ler_notas(caminho: str, mes: int = None, ano: int = None) -> list[NotaFiscal
 
     notas = []
     for _, row in df.iterrows():
-        cnpj       = fmt_cnpj(row["CNPJ"])
+
+        def _vl(col: str) -> float:
+            v = row.get(col, 0)
+            try:
+                return float(v) if pd.notna(v) else 0.0
+            except (ValueError, TypeError):
+                return 0.0
+
+        vl_doc = round(_vl("Valor N. Fiscal"), 2)
+
+        # Ignora notas com valor zero (causam erro "valor deve ser > 0" no PVA)
+        if vl_doc == 0:
+            continue
+
+        # Valida CNPJ
+        try:
+            cnpj_raw = row["CNPJ"]
+            cnpj = fmt_cnpj(cnpj_raw)
+            if int(cnpj) == 0:
+                continue   # CNPJ inválido — ignora
+        except Exception:
+            continue
+
         dt_emissao = fmt_data(row["DATA EMISSÃO"])
         regime     = str(row.get("REGIME", "")).strip()
         is_simples = "optante pelo simples" in regime.lower() and "não" not in regime.lower()
 
-        # Dt. Dep. — "EM ABERTO", 0 ou NaN → nota não foi paga → sem F600
+        # Dt. Dep. — "EM ABERTO", 0 ou NaN → sem F600
         dt_dep_raw  = row.get("Dt. Dep.")
         dt_deposito = None
         foi_pago    = False
@@ -53,17 +75,10 @@ def ler_notas(caminho: str, mes: int = None, ano: int = None) -> list[NotaFiscal
         except Exception:
             pass
 
-        def _vl(col: str) -> float:
-            v = row.get(col, 0)
-            try:
-                return float(v) if pd.notna(v) else 0.0
-            except (ValueError, TypeError):
-                return 0.0
-
         pis_ret    = round(_vl("PIS- 0,65%"), 2)
         cofins_ret = round(_vl("COFINS- 3%"), 2)
 
-        # Gera F600 somente se: tem retenção E foi pago E não é Simples
+        # F600 somente se: tem retenção E foi pago E não é Simples
         tem_retencao = (pis_ret > 0 or cofins_ret > 0) and foi_pago and not is_simples
 
         nota = NotaFiscal(
@@ -72,7 +87,7 @@ def ler_notas(caminho: str, mes: int = None, ano: int = None) -> list[NotaFiscal
             prefeitura       = str(row.get("Prefeitura", "SP")).strip(),
             num_nf           = str(int(row["Nº  NF"])),
             num_sap          = str(row.get("Numero SAP  ", "")).strip(),
-            vl_doc           = round(_vl("Valor N. Fiscal"), 2),
+            vl_doc           = vl_doc,
             iss              = round(_vl("ISS - 5%"), 2),
             irrf             = round(_vl("IRRF - 1,5%"), 2),
             csll             = round(_vl("CSLL - 1%"), 2),

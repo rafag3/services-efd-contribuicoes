@@ -1,9 +1,8 @@
 # =============================================================================
-# constantes.py — Dados fixos da empresa e registros provisórios
-# Atualizar conforme retorno das áreas responsáveis
+# constantes.py — Dados fixos da empresa e registros que precisam atualização mensal
 # =============================================================================
 
-# --- Identificação da empresa (0000 / 0140) ----------------------------------
+# --- Identificação da empresa ------------------------------------------------
 EMPRESA = {
     "CNPJ":            "46206637000130",
     "NOME":            "SOMPO SERVICES GESTAO DE RISCOS E VISTORIA LTDA",
@@ -11,7 +10,7 @@ EMPRESA = {
     "COD_MUN":         "3550308",
     "SUFRAMA":         "000000000",
     "IND_SIT_ESP":     "00",
-    "IND_APUR_IPI":    "1",       # 0000 campo 14
+    "IND_APUR_IPI":    "1",
     "INSCR_MUN":       "2.116.583-1",
 }
 
@@ -31,60 +30,55 @@ CONTATO = {
     "COD_MUN": "3550308",
 }
 
-# --- Indicadores (0110 / 0111) -----------------------------------------------
+# --- Indicadores -------------------------------------------------------------
 IND_0110 = {"IND_INC_IMOB": "1", "IND_ATIV_IMOB": "2", "IND_ATIV": "1"}
 IND_0111 = {"REC_BRU_NCUM_TRIB_MI": "0", "REC_BRU_NCUM_NT_MI": "0",
             "REC_BRU_NCUM_EXP": "0", "REC_BRU_CUM": "0", "REC_BRU_TOTAL": "0"}
 
 # --- Unidades de medida (0190) -----------------------------------------------
-UNIDADES = [
-    ("UN", "UNIDADE"),
-]
+UNIDADES = [("UN", "UNIDADE")]
 
-# --- Itens/serviços (0200) ---------------------------------------------------
+# --- Itens/serviços (0200) — 11 campos, sem CEST ----------------------------
 ITENS = [
-    # COD_ITEM | DESCR_ITEM | COD_BARRA | COD_ANT | UM | TIPO_ITEM | COD_NCM | EX_IPI | COD_GEN | COD_LST | ALIQ_ICMS
-    # 12 campos — sem CEST (campo não existe na EFD Contribuições)
     ("2018",               "FIC FI FUNDACOES RENDA FIXA",  "", "", "UN", "09", "", "", "99", "", "0"),
-    ("6621501",            "Serviço",                      "", "", "UN", "09", "", "", "99", "", "0"),
+    ("6621501",            "Servico",                      "", "", "UN", "09", "", "", "99", "", "0"),
     ("JUROSSALDO NEGATIVO", "JUROS SALDO NEGATIVO",        "", "", "",   "99", "", "", "",   "", "" ),
 ]
 
 # --- Plano de contas (0500) --------------------------------------------------
 CONTAS = [
-    # DT_ALT | COD_NAT_CC | IND_CTA | NIVEL | COD_CTA | NOME_CTA | COD_CTA_REF | CNPJ_EST
-    ("01012012", "04", "A", "6", "3.2.4.01.002.00004", "Creditos Financeiros",     "3.01.01.05.01.05", ""),
-    ("01012012", "04", "A", "6", "4.1.1.01.001.00001", "Prestação de Serviços",   "3.01.01.01.01.06", ""),
-    ("01012012", "04", "A", "6", "361140001",           "FDO NEX VC (DPV) GAIN",  "",                  ""),
-    ("01012012", "04", "A", "6", "36990099",            "OUTRAS RECEITAS FINANCEIRAS", "",             ""),
-    ("01012012", "04", "A", "6", "36910001",            "JUROS S/CRED.TRIBUT",    "",                  ""),
-    ("30122025", "04", "A", "6", "35199995",            "Receita Sompo Risk",      "",                  ""),
+    ("01012012", "04", "A", "6", "3.2.4.01.002.00004", "Creditos Financeiros",        "3.01.01.05.01.05", ""),
+    ("01012012", "04", "A", "6", "4.1.1.01.001.00001", "Prestacao de Servicos",       "3.01.01.01.01.06", ""),
+    ("01012012", "04", "A", "6", "361140001",           "FDO NEX VC (DPV) GAIN",       "",                ""),
+    ("01012012", "04", "A", "6", "36990099",            "OUTRAS RECEITAS FINANCEIRAS", "",                ""),
+    ("01012012", "04", "A", "6", "36910001",            "JUROS S/CRED.TRIBUT",         "",                ""),
+    ("30122025", "04", "A", "6", "35199995",            "Receita Sompo Risk",           "",                ""),
 ]
 
-# --- Padrões para A100 / A170 ------------------------------------------------
-A100_IND_EMIT  = "1"    # 1 = emitente é o próprio contribuinte
-A100_IND_OPER  = "0"    # 0 = saída
-A100_COD_SIT   = "00"   # 00 = documento regular
-A100_IND_PGTO  = "1"    # 1 = à vista
-A170_NUM_ITEM  = "1"
-A170_COD_ITEM  = "6621501"
-A170_CST_PIS   = "01"   # tributado a alíquota básica
-A170_ALIQ_PIS  = 1.65
-A170_CST_COFINS= "01"
+# --- Padrões A100 / A170 -----------------------------------------------------
+A100_IND_EMIT   = "1"
+A100_IND_OPER   = "0"
+A100_COD_SIT    = "00"
+A100_IND_PGTO   = "1"
+A170_NUM_ITEM   = "1"
+A170_COD_ITEM   = "6621501"
+A170_CST_PIS    = "01"
+A170_ALIQ_PIS   = 1.65
+A170_CST_COFINS = "01"
 A170_ALIQ_COFINS = 7.6
-A170_COD_CTA   = "4.1.1.01.001.00001"
+A170_COD_CTA    = "4.1.1.01.001.00001"
 
-# --- Padrões para F600 -------------------------------------------------------
-F600_IND_NAT_RET = "03"  # retenção por pessoa jurídica em geral
+# --- F600 --------------------------------------------------------------------
+F600_IND_NAT_RET = "03"
 F600_COD_REC     = "5952"
 F600_IND_NAT_PJ  = "0"
 F600_IND_DEC     = "0"
 
-# --- F100 — Receitas financeiras ------------------------------------------
-# Fonte: relatório SAP. Atualizar a cada mês com os valores reais.
-# VL_RET_EFE nos registros 1300/1700 = soma do VL_PIS / VL_COFINS daqui.
+# --- F100 — Receitas financeiras ---------------------------------------------
+# !! ATUALIZAR A CADA MÊS com os valores reais do SAP !!
+# Contas: 361140001 (FDO NÉX), 36910001 (Juros), 36990099 (Outras Rec. Fin.)
+# VL_RET_EFE nos registros 1300/1700 = soma VL_PIS / VL_COFINS daqui
 F100_FIXAS = [
-    # Valores de 04/2026 — FDO NÉX VC (DPV) GAIN
     {
         "IND_OPER": "1", "IND_ORIG": "", "COD_ITEM": "2018",
         "DT_OPER": "30042026", "VL_OPER": 6578.34,
@@ -93,7 +87,6 @@ F100_FIXAS = [
         "NAT_BC_CRED": "", "IND_ORIG_CRED": "", "COD_CTA": "361140001",
         "COD_CENTRO": "", "COD_PART": "",
     },
-    # Valores de 04/2026 — JUROS S/CRÉD.TRIBUT
     {
         "IND_OPER": "1", "IND_ORIG": "", "COD_ITEM": "2018",
         "DT_OPER": "30042026", "VL_OPER": 4495.54,
@@ -102,7 +95,6 @@ F100_FIXAS = [
         "NAT_BC_CRED": "", "IND_ORIG_CRED": "", "COD_CTA": "36910001",
         "COD_CENTRO": "", "COD_PART": "",
     },
-    # Valores de 04/2026 — OUTRAS RECEITAS FINANCEIRAS
     {
         "IND_OPER": "1", "IND_ORIG": "", "COD_ITEM": "2018",
         "DT_OPER": "30042026", "VL_OPER": 528.68,
@@ -113,11 +105,11 @@ F100_FIXAS = [
     },
 ]
 
-# --- 1300 / 1700 — Controle de retenções acumuladas -----------------------
-# VL_RET_APU = total acumulado de bônus retidos (tipo doc DZ + DA no SAP)
-# VL_RET_EFE = soma do VL_PIS / VL_COFINS dos registros F100 do período
-#              (calculado automaticamente pelo bloco1_builder)
-# VL_RET_A_EFET = VL_RET_APU - VL_RET_EFE (calculado automaticamente)
-RETENCAO_ACUMULADA_PIS    = 14229.56   # 1300 — PIS  0,65%  (atualizar mensalmente)
-RETENCAO_ACUMULADA_COFINS = 70453.17   # 1700 — COFINS 3,00% (atualizar mensalmente)
-RETENCAO_PER_APU          = "032026"   # período de apuração anterior → atualizar para mês-1
+# --- 1300 / 1700 — Saldo acumulado de retenções ------------------------------
+# !! ATUALIZAR A CADA MÊS !!
+# VL_RET_APU = soma bônus retidos acumulados (docs DZ + DA no SAP)
+# VL_RET_EFE = calculado automaticamente (soma VL_PIS/VL_COFINS do F100)
+# VL_RET_A_EFET = calculado automaticamente (APU - EFE)
+RETENCAO_ACUMULADA_PIS    = 14229.56   # 1300 — PIS
+RETENCAO_ACUMULADA_COFINS = 70453.17   # 1700 — COFINS
+RETENCAO_PER_APU          = "032026"   # período anterior (formato MMAAAA)

@@ -23,7 +23,6 @@ def build_bloco0(notas: list[NotaFiscal], dt_ini: str, dt_fin: str) -> list[str]
         EMPRESA["IND_APUR_IPI"],
     ))
 
-    # 0001 — Abertura do bloco
     linhas.append("|0001|0|")
 
     # 0100 — Dados do contato
@@ -35,7 +34,7 @@ def build_bloco0(notas: list[NotaFiscal], dt_ini: str, dt_fin: str) -> list[str]
         c["FONE"], c["FAX"], c["EMAIL"], c["COD_MUN"],
     ))
 
-    # 0110 — Indicadores de incidência
+    # 0110
     linhas.append(montar_linha(
         "0110",
         IND_0110["IND_INC_IMOB"],
@@ -44,7 +43,7 @@ def build_bloco0(notas: list[NotaFiscal], dt_ini: str, dt_fin: str) -> list[str]
         "",
     ))
 
-    # 0111 — Receitas brutas
+    # 0111
     i = IND_0111
     linhas.append(montar_linha(
         "0111",
@@ -68,34 +67,39 @@ def build_bloco0(notas: list[NotaFiscal], dt_ini: str, dt_fin: str) -> list[str]
         EMPRESA["SUFRAMA"],
     ))
 
-    # 0150 — Participantes (um por CNPJ único nas notas)
+    # 0150 — Participantes
+    # Filtra CNPJs inválidos (zeros, brancos ou menores que 11 dígitos numéricos)
     participantes = {}
     for nota in notas:
-        if nota.cnpj not in participantes:
-            participantes[nota.cnpj] = nota.razao
+        cnpj = nota.cnpj.strip()
+        # Ignora CNPJ zerado ou inválido
+        if not cnpj or int(cnpj) == 0 or len(cnpj) < 11:
+            continue
+        if cnpj not in participantes:
+            participantes[cnpj] = nota.razao
 
     for cnpj, razao in sorted(participantes.items()):
         linhas.append(montar_linha(
             "0150",
-            cnpj,
-            razao,
-            "1058",  # código Brasil
-            cnpj,    # CNPJ repetido como COD_PART
-            "",      # CPF
-            "",      # IE
-            "",      # COD_MUN (deixar vazio sem fonte)
-            "",      # NUM_SUF
-            "",      # END
-            "",      # NUM
-            "",      # COMPL
-            "",      # BAI
+            cnpj,            # COD_PART (campo 2)
+            razao,           # NOME
+            "1058",          # COD_PAIS — Brasil
+            cnpj,            # CNPJ
+            "",              # CPF
+            "",              # IE
+            "9999999",       # COD_MUN — obrigatório p/ contribuintes no Brasil
+            "",              # NUM_SUF
+            "",              # END
+            "",              # NUM
+            "",              # COMPL
+            "",              # BAI
         ))
 
     # 0190 — Unidades de medida
     for um, descr in UNIDADES:
         linhas.append(montar_linha("0190", um, descr))
 
-    # 0200 — Itens
+    # 0200 — Itens (11 campos, sem CEST)
     for item in ITENS:
         linhas.append(montar_linha("0200", *item))
 
@@ -103,7 +107,7 @@ def build_bloco0(notas: list[NotaFiscal], dt_ini: str, dt_fin: str) -> list[str]
     for conta in CONTAS:
         linhas.append(montar_linha("0500", *conta))
 
-    # 0990 — Encerramento do bloco (conta linhas do bloco 0 incluindo este)
+    # 0990 — Encerramento
     linhas.append(f"|0990|{len(linhas) + 1}|")
 
     return linhas

@@ -1,10 +1,4 @@
 @echo off
-REM =========================================================
-REM build.bat — Gera o executável EFD_Services.exe (Tkinter)
-REM Requer Python + PyInstaller instalados
-REM Executar na raiz do projeto: .\build.bat
-REM =========================================================
-
 echo Instalando dependencias...
 pip install -r requirements.txt
 pip install pyinstaller
@@ -15,8 +9,10 @@ pyinstaller ^
   --onefile ^
   --windowed ^
   --name "EFD_Services" ^
+  --add-data "assets;assets" ^
   --hidden-import openpyxl ^
   --hidden-import pandas ^
+  --hidden-import PIL ^
   main.py
 
 echo.
