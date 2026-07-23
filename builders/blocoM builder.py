@@ -23,7 +23,8 @@ def build_blocoM(notas: list[NotaFiscal], f600s: list[RegistroF600] = None,
     pis_cst02  = round(sum(f["VL_PIS"] for f in f100), 2)
     total_pis  = round(pis_cst01 + pis_cst02, 2)
 
-    ret_nc_pis      = round(sum(f.vl_ret_pis for f in f600s), 2) if f600s else 0.0
+    # VL_RET_NC zerado por decisão da equipe fiscal — preenchido manualmente no PVA
+    ret_nc_pis      = 0.0
     cont_nc_rec_pis = round(total_pis - ret_nc_pis, 2)
 
     # M200
@@ -72,7 +73,8 @@ def build_blocoM(notas: list[NotaFiscal], f600s: list[RegistroF600] = None,
     cofins_cst02       = round(sum(f["VL_COFINS"] for f in f100), 2)
     total_cofins       = round(cofins_cst01 + cofins_cst02, 2)
 
-    ret_nc_cofins      = round(sum(f.vl_ret_cofins for f in f600s), 2) if f600s else 0.0
+    # VL_RET_NC zerado por decisão da equipe fiscal — preenchido manualmente no PVA
+    ret_nc_cofins      = 0.0
     cont_nc_rec_cofins = round(total_cofins - ret_nc_cofins, 2)
 
     # M600
