@@ -1,6 +1,6 @@
 """
 main.py — EFD Contribuições · Automação de Serviços
-Interface Tkinter nativa. Empacote com PyInstaller para gerar o .exe.
+Interface Tkinter nativa com log de progresso.
 """
 
 import calendar
@@ -18,6 +18,7 @@ sys.path.insert(0, BASE_DIR)
 from readers.excel_notas_reader import ler_notas
 from writers.efd_writer import gerar_efd
 
+# ── Paleta ────────────────────────────────────────────────────────────────────
 C_VERM       = "#CC0000"
 C_VERM_ESC   = "#a30000"
 C_VERM_LIGHT = "#fff0f0"
@@ -36,6 +37,8 @@ C_ERRO_FG    = "#cc0000"
 C_AVISO_BG   = "#fffbeb"
 C_AVISO_FG   = "#92400e"
 C_AVISO_BRD  = "#fde68a"
+C_LOG_BG     = "#1e1e1e"
+C_LOG_FG     = "#d4d4d4"
 
 F_TITULO  = ("Segoe UI", 17, "bold")
 F_SUBTIT  = ("Segoe UI", 10)
@@ -43,6 +46,7 @@ F_LABEL   = ("Segoe UI", 10, "bold")
 F_NORMAL  = ("Segoe UI", 10)
 F_PEQUENA = ("Segoe UI", 9)
 F_BTN     = ("Segoe UI", 11, "bold")
+F_LOG     = ("Courier New", 9)
 
 
 def _carregar_logo(path: str, largura: int = 100):
@@ -93,6 +97,7 @@ class App(tk.Tk):
         self._construir_ui()
         self._centralizar()
 
+    # ── TTK Style ─────────────────────────────────────────────────────────────
     def _estilo_ttk(self):
         s = ttk.Style(self)
         s.theme_use("default")
@@ -106,17 +111,19 @@ class App(tk.Tk):
         s.configure("S.Horizontal.TProgressbar",
                     troughcolor=C_BORDA, background=C_VERM, thickness=3)
 
+    # ── Layout ────────────────────────────────────────────────────────────────
     def _construir_ui(self):
         root = tk.Frame(self, bg=C_FUNDO)
         root.pack(padx=0, pady=0)
 
+        # Barra lateral vermelha
         tk.Frame(root, bg=C_VERM, width=5).pack(side="left", fill="y")
 
         card = tk.Frame(root, bg=C_BRANCO, bd=0,
                         highlightbackground=C_BORDA, highlightthickness=1)
         card.pack(side="left", fill="both")
 
-        # Header
+        # ── Header ───────────────────────────────────────────────────────────
         header = tk.Frame(card, bg=C_HEADER_BG,
                           highlightbackground=C_HEADER_BRD, highlightthickness=1)
         header.pack(fill="x")
@@ -139,6 +146,7 @@ class App(tk.Tk):
 
         tk.Frame(card, bg=C_VERM, height=2).pack(fill="x")
 
+        # ── Corpo ─────────────────────────────────────────────────────────────
         body = tk.Frame(card, bg=C_BRANCO)
         body.pack(padx=30, pady=24, fill="both")
 
@@ -198,13 +206,56 @@ class App(tk.Tk):
         )
         self._btn_gerar.pack(fill="x", pady=(22, 0))
 
+        # Barra de progresso
         self._progress = ttk.Progressbar(body, style="S.Horizontal.TProgressbar",
                                           mode="indeterminate")
+
+        # ── Log de progresso (fundo escuro estilo terminal) ───────────────────
+        self._frm_log = tk.Frame(body, bg=C_LOG_BG,
+                                  highlightbackground="#444", highlightthickness=1)
+
+        log_topo = tk.Frame(self._frm_log, bg="#2d2d2d")
+        log_topo.pack(fill="x")
+        tk.Label(log_topo, text="●  Log de processamento",
+                 bg="#2d2d2d", fg="#aaaaaa",
+                 font=("Segoe UI", 8, "bold")).pack(side="left", padx=10, pady=5)
+        self._lbl_etapa = tk.Label(log_topo, text="",
+                                    bg="#2d2d2d", fg="#888888",
+                                    font=("Segoe UI", 8))
+        self._lbl_etapa.pack(side="right", padx=10)
+
+        log_inner = tk.Frame(self._frm_log, bg=C_LOG_BG)
+        log_inner.pack(fill="both", expand=True)
+
+        self._txt_log = tk.Text(
+            log_inner, height=10, font=F_LOG,
+            bg=C_LOG_BG, fg=C_LOG_FG,
+            relief="flat", bd=0, state="disabled",
+            wrap="word", cursor="arrow",
+            highlightthickness=0, insertwidth=0,
+        )
+        sb = tk.Scrollbar(log_inner, command=self._txt_log.yview,
+                           relief="flat", width=10,
+                           bg="#333", troughcolor="#1e1e1e")
+        self._txt_log.config(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y", pady=4, padx=(0, 2))
+        self._txt_log.pack(side="left", fill="both", expand=True, padx=10, pady=8)
+
+        # Tags de cor
+        self._txt_log.tag_config("ok",     foreground="#4ec9b0", font=("Courier New", 9, "bold"))
+        self._txt_log.tag_config("erro",   foreground="#f44747", font=("Courier New", 9, "bold"))
+        self._txt_log.tag_config("info",   foreground="#9cdcfe")
+        self._txt_log.tag_config("warn",   foreground="#dcdcaa")
+        self._txt_log.tag_config("titulo", foreground="#ce9178", font=("Courier New", 9, "bold"))
+        self._txt_log.tag_config("dim",    foreground="#555555")
+
+        # Status final
         self._frm_status = tk.Frame(body, bg=C_BRANCO, highlightthickness=0)
         self._lbl_status = tk.Label(self._frm_status, text="", bg=C_BRANCO,
                                      fg=C_TEXTO, font=F_NORMAL, wraplength=420, justify="left")
         self._lbl_status.pack(anchor="w", padx=12, pady=8)
 
+        # Rodapé
         tk.Frame(body, bg=C_BORDA, height=1).pack(fill="x", pady=(22, 14))
         aviso = tk.Frame(body, bg=C_AVISO_BG,
                          highlightbackground=C_AVISO_BRD, highlightthickness=1)
@@ -215,6 +266,25 @@ class App(tk.Tk):
                  bg=C_AVISO_BG, fg=C_AVISO_FG, font=("Segoe UI", 8),
                  justify="left", wraplength=390).pack(padx=12, pady=10, anchor="w")
 
+    # ── Log helpers ───────────────────────────────────────────────────────────
+    def _log(self, msg: str, tag: str = "info"):
+        """Adiciona uma linha ao log de progresso (thread-safe via after)."""
+        def _append():
+            self._txt_log.config(state="normal")
+            self._txt_log.insert("end", msg + "\n", tag)
+            self._txt_log.see("end")
+            self._txt_log.config(state="disabled")
+        self.after(0, _append)
+
+    def _log_etapa(self, texto: str):
+        self.after(0, lambda: self._lbl_etapa.config(text=texto))
+
+    def _log_limpar(self):
+        self._txt_log.config(state="normal")
+        self._txt_log.delete("1.0", "end")
+        self._txt_log.config(state="disabled")
+
+    # ── Interações ────────────────────────────────────────────────────────────
     def _selecionar_arquivo(self):
         caminho = filedialog.askopenfilename(
             title="Selecionar planilha de notas fiscais",
@@ -230,26 +300,71 @@ class App(tk.Tk):
         self._btn_gerar.config(state="disabled", bg="#cccccc")
         self._progress.pack(fill="x", pady=(12, 0))
         self._progress.start(12)
-        self._set_status("Processando notas e gerando TXT…", C_SUBTEXTO)
+        self._set_status("")
+        # Mostra o log
+        self._log_limpar()
+        self._frm_log.pack(fill="x", pady=(12, 0))
         threading.Thread(target=self._processar, daemon=True).start()
 
     def _processar(self):
         try:
             mes = int(self._mes.get()[:2])
             ano = int(self._ano.get()[:4])
+
+            self._log(f"═══ EFD Contribuições — {mes:02d}/{ano} ═══", "titulo")
+            self._log("")
+
+            # Leitura da planilha
+            self._log_etapa("Lendo planilha...")
+            self._log("📄  Lendo planilha de notas fiscais...", "info")
             notas = ler_notas(self._caminho_xlsx.get(), mes=mes, ano=ano)
+
             if not notas:
+                self._log("✗  Nenhuma nota encontrada para o período selecionado.", "erro")
                 self._finalizar_erro("Nenhuma nota encontrada para o período selecionado.")
                 return
-            ultimo = calendar.monthrange(ano, mes)[1]
+
+            com_ret = [n for n in notas if n.tem_retencao]
+            sem_pgto = [n for n in notas if (n.pis_ret > 0 or n.cofins_ret > 0) and not n.tem_retencao]
+
+            self._log(f"✓  {len(notas)} notas carregadas", "ok")
+            self._log(f"   → {len(com_ret)} com retenção paga (geram F600)", "dim")
+            self._log(f"   → {len(sem_pgto)} em aberto (sem F600)", "dim")
+            self._log("")
+
+            # Período
+            import calendar as cal
+            ultimo = cal.monthrange(ano, mes)[1]
             dt_ini = f"01{mes:02d}{ano}"
             dt_fin = f"{ultimo}{mes:02d}{ano}"
-            conteudo = gerar_efd(notas, dt_ini, dt_fin)
+            self._log(f"📅  Período: {dt_ini} → {dt_fin}", "info")
+            self._log("")
+
+            # Callback de progresso para busca de municípios
+            def progresso(atual, total, msg):
+                self._log_etapa(f"Municípios {atual}/{total}")
+                if atual == 1:
+                    self._log("🌐  Consultando municípios via BrasilAPI...", "info")
+                self._log(f"   [{atual:2d}/{total}] {msg}", "dim")
+
+            # Geração do TXT
+            self._log_etapa("Gerando TXT...")
+            self._log("⚙️   Montando blocos SPED...", "info")
+            conteudo = gerar_efd(notas, dt_ini, dt_fin, callback_progresso=progresso)
+
+            n_linhas = len(conteudo.decode("latin-1", errors="replace").splitlines())
+            self._log(f"✓  TXT gerado: {n_linhas} linhas", "ok")
+            self._log("")
+
             nome = f"EFD_CONTRIBUICOES_{mes:02d}{ano}.txt"
+            self._log_etapa("Concluído ✓")
             self.after(0, lambda: self._salvar_arquivo(conteudo, nome))
+
         except Exception as e:
             import traceback
-            self._finalizar_erro(f"Erro: {e}\n\n{traceback.format_exc()}")
+            self._log(f"✗  ERRO: {e}", "erro")
+            self._log(traceback.format_exc(), "dim")
+            self._finalizar_erro(str(e))
 
     def _salvar_arquivo(self, conteudo: bytes, nome: str):
         dest = filedialog.asksaveasfilename(
@@ -264,6 +379,7 @@ class App(tk.Tk):
         self._progress.stop()
         self._progress.pack_forget()
         self._btn_gerar.config(state="normal", bg=C_VERM)
+        self._log(f"💾  Salvo em: {os.path.basename(dest)}", "ok")
         self._set_status(
             f"✅  Arquivo gerado com sucesso!\n{os.path.basename(dest)}\n"
             f"Importe no PVA da EFD Contribuições e valide.",
